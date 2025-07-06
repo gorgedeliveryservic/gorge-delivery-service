@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Track Your Parcel – Gorge Delivery Service</title>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f7f7f7; }
+    input, button { padding: 10px; width: 100%; margin: 10px 0; }
+    .result { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; }
+    #map { height: 300px; width: 100%; margin-top: 15px; border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>📦 Track Your Parcel</h1>
+
+  <input type="text" id="trackId" placeholder="Enter Tracking ID (e.g., GDS-3882038)">
+  <button onclick="trackParcel()">🔍 Track</button>
+
+  <div id="trackingResult" class="result" style="display: none;">
+    <h2>Tracking ID: <span id="idDisplay"></span></h2>
+    <p><strong>Current Location:</strong> <span id="location"></span></p>
+    <p><strong>Status:</strong> <span id="status"></span></p>
+    <p><strong>Note:</strong> <span id="note"></span></p>
+
+    <div id="map"></div>
+
+    <hr>
+    <h3>Sender</h3>
+    <p><strong>Name:</strong> <span id="senderName"></span></p>
+    <p><strong>Address:</strong> <span id="senderAddress"></span></p>
+
+    <h3>Receiver</h3>
+    <p><strong>Name:</strong> <span id="receiverName"></span></p>
+    <p><strong>Address:</strong> <span id="receiverAddress"></span></p>
+    <p><strong>Contact:</strong> <span id="receiverContact"></span></p>
+
+    <h3>Parcel</h3>
+    <p><strong>Description:</strong> <span id="description"></span></p>
+    <p><strong>Type:</strong> <span id="type"></span></p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+
+  <!-- Leaflet (Free Map) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // ✅ Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBG-zUGQwAiaSl5a0y2RFI4YJTbY8vG83k",
+      authDomain: "gorge-delivery-service.firebaseapp.com",
+      databaseURL: "https://gorge-delivery-service-default-rtdb.firebaseio.com",
+      projectId: "gorge-delivery-service",
+      storageBucket: "gorge-delivery-service.appspot.com",
+      messagingSenderId: "380124595134",
+      appId: "1:380124595134:web:52c24bd220a6c06087afef"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let map, marker;
+
+    function trackParcel() {
+      const id = document.getElementById('trackId').value.trim();
+      console.log("🟡 Tracking ID entered:", id);
+
+      const ref = firebase.database().ref('parcels/' + id);
+
+      ref.get()
+        .then(snapshot => {
+          console.log("📦 Snapshot result:", snapshot.val());
+
+          if (!snapshot.exists()) {
+            alert("❌ Invalid Tracking ID. Please check again.");
+            return;
+          }
+
+          const data = snapshot.val();
+
+          document.getElementById("trackingResult").style.display = "block";
+          document.getElementById("idDisplay").innerText = id;
+          document.getElementById("location").innerText = data.current_location;
+          document.getElementById("status").innerText = data.status;
+          document.getElementById("note").innerText = data.note || "—";
+
+          document.getElementById("senderName").innerText = data.sender_name;
+          document.getElementById("senderAddress").innerText = data.sender_address;
+          document.getElementById("receiverName").innerText = data.receiver_name;
+          document.getElementById("receiverAddress").innerText = data.receiver_address;
+          document.getElementById("receiverContact").innerText = data.receiver_contact;
+          document.getElementById("description").innerText = data.description;
+          document.getElementById("type").innerText = data.type;
+
+          loadMap(data.current_location);
+        })
+        .catch(error => {
+          alert("🔥 Firebase error: " + error.message);
+          console.error("🚨 Firebase read failed:", error);
+        });
+    }
+
+    function loadMap(address) {
+      console.log("📍 Geocoding address:", address);
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.length === 0) {
+            alert("📍 Map location not found.");
+            console.error("❌ No geocode result for:", address);
+            return;
+          }
+
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          console.log("✅ Geocoded to:", lat, lon);
+
+          if (!map) {
+            map = L.map('map').setView([lat, lon], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap'
+            }).addTo(map);
+          } else {
+            map.setView([lat, lon], 6);
+            if (marker) marker.remove();
+          }
+
+          marker = L.marker([lat, lon]).addTo(map);
+        })
+        .catch(error => {
+          alert("🌍 Map Error: " + error.message);
+          console.error("❌ Geocoding failed:", error);
+        });
+    }
+  </script>
+</body>
+</html>
