@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel – Gorge Delivery Service</title>
+</head>
+<body>
+  <h1>📦 Add Parcel to Tracking</h1>
+
+  <form id="parcelForm">
+    <label>Tracking ID:<br><input type="text" id="trackingId" required></label><br><br>
+
+    <label>Sender Name:<br><input type="text" id="senderName" required></label><br><br>
+    <label>Sender Address:<br><input type="text" id="senderAddress" required></label><br><br>
+
+    <label>Receiver Name:<br><input type="text" id="receiverName" required></label><br><br>
+    <label>Receiver Address:<br><input type="text" id="receiverAddress" required></label><br><br>
+    <label>Receiver Phone/Email:<br><input type="text" id="receiverContact" required></label><br><br>
+
+    <label>Parcel Description:<br><input type="text" id="description" required></label><br><br>
+    <label>Parcel Type:<br><input type="text" id="type" required></label><br><br>
+
+    <label>Current Location:<br><input type="text" id="currentLocation" required></label><br><br>
+    <label>Status:<br>
+      <select id="status" required>
+        <option>In Transit</option>
+        <option>Delivered</option>
+        <option>Held</option>
+      </select>
+    </label><br><br>
+
+    <label>Note (optional):<br><input type="text" id="note"></label><br><br>
+
+    <button type="submit">➕ Add Parcel</button>
+  </form>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBG-zUGQwAiaSl5a0y2RFI4YJTbY8vG83k",
+      authDomain: "gorge-delivery-service.firebaseapp.com",
+      databaseURL: "https://gorge-delivery-service-default-rtdb.firebaseio.com",
+      projectId: "gorge-delivery-service",
+      storageBucket: "gorge-delivery-service.appspot.com",
+      messagingSenderId: "380124595134",
+      appId: "1:380124595134:web:52c24bd220a6c06087afef",
+      measurementId: "G-Q5NZNS8SL4"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    document.getElementById("parcelForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const trackingId = document.getElementById("trackingId").value;
+
+      const data = {
+        sender_name: document.getElementById("senderName").value,
+        sender_address: document.getElementById("senderAddress").value,
+        receiver_name: document.getElementById("receiverName").value,
+        receiver_address: document.getElementById("receiverAddress").value,
+        receiver_contact: document.getElementById("receiverContact").value,
+        description: document.getElementById("description").value,
+        type: document.getElementById("type").value,
+        current_location: document.getElementById("currentLocation").value,
+        status: document.getElementById("status").value,
+        note: document.getElementById("note").value || ""
+      };
+
+      firebase.database().ref('parcels/' + trackingId).set(data)
+        .then(() => alert("✅ Parcel saved successfully!"))
+        .catch(error => alert("❌ Failed to save: " + error.message));
+    });
+  </script>
+</body>
+</html>
